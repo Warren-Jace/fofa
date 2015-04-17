@@ -36,7 +36,11 @@ class SearchController < ApplicationController
   end
 
   def get_host_content
-    render :json => {'host'=>Subdomain.find_by_host(params['host']).body}
+  	unless params['host'].downcase.include?('qihoo.net')
+    	render :json => {'host'=>Subdomain.find_by_host(params['host']).body}
+    else
+      render :json => {'host'=>''}
+    end
   end
 
   def result
