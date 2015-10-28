@@ -1,0 +1,75 @@
+<style>
+  em {
+      background-color: #ff604f;
+  }
+</style>
+
+
+<!-- Start .bredcrumb -->
+<ul id="crumb" class="breadcrumb"><li><i class="im-home"></i><a href="/my">管理首页</a><i class="en-arrow-right7"></i></li><li><i class="im-screen"></i> 社工库查询 </li></ul>
+<!-- End .breadcrumb -->
+
+<div class="row">
+  <div class="col-xs-6 col-sm-6">
+    <form class="navbar-form navbar-left hidden-xs" role="search">
+      <div class="form-group">
+        <button class="btn no-border no-margin bg-none no-pd-l" type="submit">
+          <i class="fa fa-search"></i>
+        </button>
+        <input id='q' name='q' type="text" class="form-control no-border no-padding search" placeholder="输入关键字进行查找" value="<%= params[:q]%>">
+      </div>
+    </form>
+  </div>
+</div>
+
+<% if @sgk %>
+    <p><%= (current_user && current_user.id==1) ? @q.to_json : '' %></p>
+<table class="table table-striped table-hover table-bordered">
+  <thead>
+  <tr>
+    <th width="100%">内容</th>
+  </tr>
+  </thead>
+
+  <tbody>
+  <% @sgk.each do |s| %>
+      <tr>
+        <td>
+          <small><span class="label label-default pull-right"><%= s['_type'] %></span></small><br/>
+          <%
+             md5=nil
+             salt=nil
+             s['_source'].each{|d|
+               unless d[0]=="source"
+                    if d[0].to_s.downcase.include?('salt')
+                      salt=d[1]
+                    end
+                    if d[1].to_s.downcase=~/[a-f0-9]{32}/i
+                      md5=d[1]
+                    end
+             value = d[1]
+                    value = s['highlight'][d[0]] if s['highlight'] && s['highlight'][d[0]]
+          %>
+              <%= d[0] %> : <b><%= value ? link_to(raw(value), "/my/sgk?q=\"#{d[1]}\"") : '' %></b><br/>
+          <%    end
+             } %>
+
+          <% if md5
+             md5_str = md5
+             md5_str += salt ? ':'+salt : ''
+          %>
+              <a href="/my/sgk/crack?md5=<%= md5_str %>"><span class="label label-info pull-right">解密:<%= md5_str %></span></a><br/>
+          <% end  %>
+        </td>
+      </tr>
+  <% end %>
+  </tbody>
+</table>
+
+<div class="col-lg-4">
+  <div class="pull-right pagination pagination-lg">
+    <%= will_paginate @sgk,:previous_label=> '上一页',:next_label=> '下一页', :container => false  %>
+  </div>
+</div>
+
+<% end %>

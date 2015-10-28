@@ -20,7 +20,7 @@ Fofa::Application.configure do
   # config.action_dispatch.rack_cache = true
 
   # Disable Rails's static asset server (Apache or nginx will already do this).
-  config.serve_static_assets = true
+  config.serve_static_files = true
 
   # Compress JavaScripts and CSS.
   config.assets.js_compressor = :uglifier
@@ -80,5 +80,5 @@ Fofa::Application.configure do
 
   config.action_mailer.default_url_options = { host: 'fofa.so' }
 
-  config.assets.precompile += %w( active_admin.css active_admin/print.css active_admin.js )
+  config.assets.precompile += %w( active_admin.css active_admin/print.css active_admin.js my.js my.css search.js lab.js targets.js targets.css)
 end

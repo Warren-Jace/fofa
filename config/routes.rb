@@ -88,7 +88,6 @@ Fofa::Application.routes.draw do
   get "my/unsave/:id" => "my#unsave"
   delete "my/ruledestroy/:id" => "my#ruledestroy"
   get "my" => "my#index"
-
   scope '/my' do
     resources :rules do
       member do
@@ -100,6 +99,59 @@ Fofa::Application.routes.draw do
     resources :categories do
       collection do
         get :index
+      end
+    end
+
+    resources :targets do
+      resources :asset_domains do
+        collection do
+          get :reload
+        end
+      end
+      resources :asset_entrances do
+        collection do
+          get :reload
+        end
+      end
+      resources :asset_hosts do
+        collection do
+          get :reload
+          get :get_all_json
+        end
+      end
+      resources :asset_ips do
+        collection do
+          get :reload
+          get :get_all_json
+        end
+      end
+      resources :asset_persons do
+        collection do
+          get :reload
+          get :get_all_json
+          get :import_emails
+          post :import_emails
+          delete :delete_domain_emails
+        end
+      end
+
+      collection do
+        get :index
+        get :getdumpinfo
+        get :adddumptask
+      end
+
+    end
+
+    resources :sensitives do
+      collection do
+      end
+    end
+
+    resources :sgk do
+      collection do
+        get :index
+        get :crack
       end
     end
   end
@@ -165,7 +217,9 @@ Fofa::Application.routes.draw do
 
   #sidekiq_web_constraint = lambda { |request| request.remote_ip == '127.0.0.1' }
   #constraints sidekiq_web_constraint do
-  authenticate :user, lambda { |u| u.isadmin } do
+  authenticate :user, lambda { |u|
+                      u.isadmin
+                    } do
     require 'sidekiq/web'
     mount Sidekiq::Web => '/sidekiq'
   end

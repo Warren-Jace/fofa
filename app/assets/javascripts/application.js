@@ -11,6 +11,7 @@
 // about supported directives.
 //
 //= require jquery
+//= require jquery.icheck
 //= require jquery.turbolinks
 //= require jquery_ujs
 //aa= require jquery.ui.all

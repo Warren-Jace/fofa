@@ -6,6 +6,9 @@ class User < ActiveRecord::Base
   has_many :rules
   has_many :categories
   has_many :userhosts
+  has_many :usertargets
+  has_many :targets, through: :usertargets
+  has_many :sensitives
 
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable

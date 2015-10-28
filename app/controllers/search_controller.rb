@@ -1,6 +1,5 @@
 # -*- encoding : utf-8 -*-
 require "sidekiq"
-require "#{Rails.root}/app/workers/url_worker.rb"
 
 class SearchController < ApplicationController
   include SearchHelper
@@ -8,13 +7,13 @@ class SearchController < ApplicationController
 
   def index
     #@tbl_cnt = Subdomain.search_count
-    @last = Subdomain.last
+    #@last = Subdomain.last
     #@show_ws_link = true
   end
   
   def get_web_cnt
     #@tbl_cnt = Subdomain.search_count
-    render :text => get_table_cnt('subdomain') #Subdomain.count
+    render :text => Subdomain.es_size
   end
 
   def get_hosts_by_ip
@@ -37,7 +36,7 @@ class SearchController < ApplicationController
 
   def get_host_content
   	unless params['host'].downcase.include?('qihoo.net')
-    	render :json => {'host'=>Subdomain.find_by_host(params['host']).body}
+    	render :json => {'host'=>Subdomain.es_get(params['host'])['_source']}
     else
       render :json => {'host'=>''}
     end
@@ -53,7 +52,7 @@ class SearchController < ApplicationController
     #puts @query.encoding
     #@query.force_encoding('utf-8')
     #render :text => @query
-    @error, @mode, @results, @tags = search(@query, 10, @page)
+    @error, @mode, @results, @tags, @es_query_string = search(@query, 10, @page, true)
     if @page && @page.to_i>10 && !current_user
       @error = "未登录状态只能查看100条记录，登录后可查看1000条记录！";
     end
@@ -64,12 +63,14 @@ class SearchController < ApplicationController
   def checkapp
     @host = params['host']
     #@post = request.post?
+    t1 = Time.now.to_f
     @app = check_app(@host, params['all']) if @host #&& @post
+    @time_delta = Time.now.to_f - t1
   end
 
   def refresh
     @host = params['host']
-    Sidekiq::Client.enqueue_to("realtime_process_url", Processor, @host, true)
+    RealtimeprocessWorker.perform_async(@host, true)
     render :text => "强制刷新成功！"
   end
 

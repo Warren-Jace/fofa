@@ -1,5 +1,4 @@
 require 'sidekiq'
-require "#{Rails.root}/app/workers/url_worker.rb"
 
 class LabController < ApplicationController
   include ApiHelper
@@ -8,7 +7,7 @@ class LabController < ApplicationController
     @domain = params['domain']
     maxsize = 1000
     maxsize = 10000 if current_user
-    @ips = get_ips_of_domain(@domain, maxsize)
+    @ips = get_ips_of_domain_(@domain, maxsize)
   end
 
   def addtask
@@ -29,7 +28,7 @@ class LabController < ApplicationController
       @jobid = SecureRandom.hex
       maxsize = 200
       maxsize = 1000 if current_user
-      Sidekiq::Client.enqueue_to('ui_task', Uitask, @jobid, @action, @domain, maxsize)
+      Uitask.perform_async( @jobid, @action, @domain, maxsize)
       render :json => {error:false, errormsg:'', jobId: @jobid}
       return
     else
@@ -75,19 +74,14 @@ class LabController < ApplicationController
   end
 
   private
-  def get_ips_of_domain(domain, maxsize=1000)
+  def get_ips_of_domain_(domain, maxsize=1000)
     if domain
       key = 'domain_net:'+domain.downcase
       @ips = Sidekiq.redis{|redis| redis.get(key) }
       if @ips
         @ips = JSON.parse(@ips)
       else
-        @ips = Subdomain.connection.execute(%Q{
-              select INET_NTOA(INET_ATON(ip) & 0xFFFFFF00) as net,GROUP_CONCAT(hosts) as hosts,GROUP_CONCAT(ip) as ips,count(*) as cnt from(
-                select ip,GROUP_CONCAT(host) as hosts from (select ip, host from subdomain
-                where reverse_domain=reverse(#{Subdomain.connection.quote(@domain)}) limit #{maxsize}) t group by ip
-              )t group by net order by cnt desc,net asc
-            })
+        @ips = Subdomain.get_ips_of_domain(domain, maxsize)
         Sidekiq.redis{|redis|
           redis.set(key, @ips.to_json)
           redis.expire(key, 60*60*24)
